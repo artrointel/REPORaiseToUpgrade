@@ -1,0 +1,6 @@
+bin/
+obj/
+artifacts/
+.vscode/
+*.user
+Directory.Repo.props
