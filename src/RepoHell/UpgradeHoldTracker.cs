@@ -10,6 +10,7 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
 
     private readonly Dictionary<string, float> _holdSeconds = new();
     private readonly HashSet<string> _currentlyGrabbing = new();
+    private readonly HashSet<string> _previouslyGrabbing = new();
     private readonly List<string> _stalePlayers = new();
     private readonly List<PhysGrabber> _pendingReleases = new();
 
@@ -31,6 +32,7 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
     {
         if (_physGrabObject == null || !ShopUpgradeService.IsHostInShop)
         {
+            CancelTrackedPreparations();
             _holdSeconds.Clear();
             return;
         }
@@ -54,6 +56,15 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
 
             if (!_currentlyGrabbing.Add(steamId))
             {
+                continue;
+            }
+
+            if (!ShopUpgradeService.EnsurePrepared(
+                    _itemUpgrade,
+                    playerAvatar,
+                    _upgradeName))
+            {
+                _holdSeconds.Remove(steamId);
                 continue;
             }
 
@@ -111,6 +122,24 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
         {
             _holdSeconds.Remove(steamId);
         }
+
+        _stalePlayers.Clear();
+
+        foreach (string steamId in _previouslyGrabbing)
+        {
+            if (!_currentlyGrabbing.Contains(steamId))
+            {
+                _stalePlayers.Add(steamId);
+            }
+        }
+
+        foreach (string steamId in _stalePlayers)
+        {
+            ShopUpgradeService.CancelPreparation(steamId, _itemUpgrade);
+        }
+
+        _previouslyGrabbing.Clear();
+        _previouslyGrabbing.UnionWith(_currentlyGrabbing);
     }
 
     private void ReleaseSuccessfulPlayers()
@@ -140,5 +169,36 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
         }
 
         _pendingReleases.Clear();
+    }
+
+    private void OnDestroy()
+    {
+        CancelTrackedPreparations();
+
+        if (_itemUpgrade != null)
+        {
+            ShopUpgradeService.CancelPreparationsForSource(_itemUpgrade);
+        }
+    }
+
+    private void CancelTrackedPreparations()
+    {
+        if (_itemUpgrade == null)
+        {
+            return;
+        }
+
+        foreach (string steamId in _previouslyGrabbing)
+        {
+            ShopUpgradeService.CancelPreparation(steamId, _itemUpgrade);
+        }
+
+        foreach (string steamId in _currentlyGrabbing)
+        {
+            ShopUpgradeService.CancelPreparation(steamId, _itemUpgrade);
+        }
+
+        _previouslyGrabbing.Clear();
+        _currentlyGrabbing.Clear();
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
@@ -8,10 +7,14 @@ namespace RepoHell;
 
 internal static class ShopUpgradeService
 {
+    private const string SetPositionRpcName = "SetPositionRPC";
     private const string ToggleItemRpcName = "ToggleItemRPC";
-    private const float EffectCarrierInitializationSeconds = 0.35f;
+    private static readonly Vector3 CarrierStagingOffset =
+        new(4096f, 4096f, 4096f);
 
     private static readonly HashSet<string> ClaimedPlayers = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, PreparedUpgrade> PreparedByPlayer =
+        new(StringComparer.Ordinal);
     private static bool _wasInShop;
 
     internal static bool IsHostInShop =>
@@ -24,6 +27,7 @@ internal static class ShopUpgradeService
     {
         if (RunManager.instance == null)
         {
+            ClearPreparedUpgrades();
             _wasInShop = false;
             return;
         }
@@ -32,8 +36,13 @@ internal static class ShopUpgradeService
 
         if (isInShop && !_wasInShop)
         {
+            ClearPreparedUpgrades();
             ClaimedPlayers.Clear();
             Plugin.ModLogger.LogInfo("Entered the shop. Every player may claim one held upgrade.");
+        }
+        else if (!isInShop && _wasInShop)
+        {
+            ClearPreparedUpgrades();
         }
 
         _wasInShop = isInShop;
@@ -42,6 +51,95 @@ internal static class ShopUpgradeService
     internal static bool HasClaimed(string steamId)
     {
         return ClaimedPlayers.Contains(steamId);
+    }
+
+    /// <summary>
+    /// Prepares one hidden vanilla item for the player's current grab. Returning
+    /// false means a new carrier was created this frame, so the gesture timer must
+    /// begin at zero. Looking away keeps the same prepared carrier; switching or
+    /// releasing the item disposes it.
+    /// </summary>
+    internal static bool EnsurePrepared(
+        ItemUpgrade sourceUpgrade,
+        PlayerAvatar playerAvatar,
+        string upgradeName)
+    {
+        if (!IsHostInShop)
+        {
+            return false;
+        }
+
+        string steamId = SemiFunc.PlayerGetSteamID(playerAvatar);
+        if (string.IsNullOrWhiteSpace(steamId) || HasClaimed(steamId))
+        {
+            return false;
+        }
+
+        int sourceInstanceId = sourceUpgrade.GetInstanceID();
+        if (PreparedByPlayer.TryGetValue(steamId, out PreparedUpgrade? existing))
+        {
+            if (existing.SourceInstanceId == sourceInstanceId &&
+                existing.UpgradeName == upgradeName &&
+                existing.Carrier != null)
+            {
+                return true;
+            }
+
+            PreparedByPlayer.Remove(steamId);
+            DestroyCarrier(existing.Carrier);
+        }
+
+        GameObject carrier;
+        try
+        {
+            carrier = CreateCarrier(sourceUpgrade, upgradeName);
+        }
+        catch (Exception exception)
+        {
+            Plugin.ModLogger.LogError(
+                $"Could not prepare {upgradeName} feedback for {steamId}: {exception}");
+            return false;
+        }
+
+        PreparedByPlayer[steamId] = new PreparedUpgrade(
+            sourceInstanceId,
+            upgradeName,
+            carrier);
+        return false;
+    }
+
+    internal static void CancelPreparation(string steamId, ItemUpgrade sourceUpgrade)
+    {
+        if (string.IsNullOrWhiteSpace(steamId) ||
+            !PreparedByPlayer.TryGetValue(steamId, out PreparedUpgrade? prepared) ||
+            prepared.SourceInstanceId != sourceUpgrade.GetInstanceID())
+        {
+            return;
+        }
+
+        PreparedByPlayer.Remove(steamId);
+        DestroyCarrier(prepared.Carrier);
+    }
+
+    internal static void CancelPreparationsForSource(ItemUpgrade sourceUpgrade)
+    {
+        int sourceInstanceId = sourceUpgrade.GetInstanceID();
+        List<string> stalePlayers = new();
+
+        foreach (KeyValuePair<string, PreparedUpgrade> pair in PreparedByPlayer)
+        {
+            if (pair.Value.SourceInstanceId == sourceInstanceId)
+            {
+                stalePlayers.Add(pair.Key);
+            }
+        }
+
+        foreach (string steamId in stalePlayers)
+        {
+            PreparedUpgrade prepared = PreparedByPlayer[steamId];
+            PreparedByPlayer.Remove(steamId);
+            DestroyCarrier(prepared.Carrier);
+        }
     }
 
     internal static bool TryClaim(
@@ -55,129 +153,138 @@ internal static class ShopUpgradeService
         }
 
         string steamId = SemiFunc.PlayerGetSteamID(playerAvatar);
-        if (string.IsNullOrWhiteSpace(steamId) || !ClaimedPlayers.Add(steamId))
+        if (string.IsNullOrWhiteSpace(steamId) || HasClaimed(steamId))
         {
             return false;
         }
 
+        if (!PreparedByPlayer.TryGetValue(steamId, out PreparedUpgrade? prepared) ||
+            prepared.SourceInstanceId != sourceUpgrade.GetInstanceID() ||
+            prepared.UpgradeName != upgradeName ||
+            prepared.Carrier == null)
+        {
+            return false;
+        }
+
+        ClaimedPlayers.Add(steamId);
+        PreparedByPlayer.Remove(steamId);
+
         try
         {
-            QueueVanillaUpgrade(sourceUpgrade, playerAvatar, steamId, upgradeName);
+            TriggerVanillaUpgrade(
+                prepared.Carrier,
+                sourceUpgrade,
+                playerAvatar);
 
             Plugin.ModLogger.LogInfo(
-                $"Queued vanilla {upgradeName} +1 use for " +
+                $"Played vanilla {upgradeName} +1 use for " +
                 $"{SemiFunc.PlayerGetName(playerAvatar)} ({steamId}).");
             return true;
         }
         catch (Exception exception)
         {
             ClaimedPlayers.Remove(steamId);
+            DestroyCarrier(prepared.Carrier);
             Plugin.ModLogger.LogError(
                 $"Failed to grant {upgradeName} +1 to player {steamId}: {exception}");
             return false;
         }
     }
 
-    private static void QueueVanillaUpgrade(
-        ItemUpgrade sourceUpgrade,
-        PlayerAvatar playerAvatar,
-        string steamId,
-        string upgradeName)
+    private static GameObject CreateCarrier(ItemUpgrade sourceUpgrade, string upgradeName)
     {
         Item item = sourceUpgrade.itemAttributes.item;
-        Vector3 position = sourceUpgrade.transform.position;
+        Vector3 stagingPosition = sourceUpgrade.transform.position + CarrierStagingOffset;
         Quaternion rotation = sourceUpgrade.transform.rotation;
-        GameObject effectCarrier;
+        GameObject carrier;
 
         if (SemiFunc.IsMultiplayer())
         {
-            effectCarrier = PhotonNetwork.InstantiateRoomObject(
+            carrier = PhotonNetwork.InstantiateRoomObject(
                 item.prefab.ResourcePath,
-                position,
+                stagingPosition,
                 rotation,
                 0,
                 null);
         }
         else
         {
-            effectCarrier = UnityEngine.Object.Instantiate(
+            carrier = UnityEngine.Object.Instantiate(
                 item.prefab.Prefab,
-                position,
+                stagingPosition,
                 rotation);
         }
 
-        if (effectCarrier == null)
+        if (carrier == null)
         {
             throw new InvalidOperationException(
-                $"Could not create the vanilla effect carrier for {upgradeName}.");
+                $"Could not prepare the vanilla effect carrier for {upgradeName}.");
         }
 
-        // The carrier exists only to run the stock use effect. Mark it before the
-        // next physics tick so the host can never treat it as a shop purchase.
-        effectCarrier.AddComponent<UpgradeEffectCarrier>();
+        // This host-only marker excludes the carrier from checkout and price
+        // progression. It adds no rendering and is not required on vanilla peers.
+        carrier.AddComponent<UpgradeEffectCarrier>();
 
-        int playerPhotonViewId = playerAvatar.photonView.ViewID;
-        string purchasedItemName = item.name;
+        // The host owns the room object, so disabling host-side physics keeps the
+        // staged carrier from falling, colliding, or entering a shop trigger.
+        Rigidbody? rigidbody = carrier.GetComponent<Rigidbody>();
+        if (rigidbody != null)
+        {
+            rigidbody.velocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+            rigidbody.detectCollisions = false;
+            rigidbody.isKinematic = true;
+        }
 
-        Plugin.RunCoroutine(TriggerVanillaUpgradeNextFrame(
-            effectCarrier,
-            playerPhotonViewId,
-            steamId,
-            upgradeName,
-            purchasedItemName));
+        foreach (Collider collider in carrier.GetComponentsInChildren<Collider>())
+        {
+            collider.enabled = false;
+        }
+
+        return carrier;
     }
 
-    private static IEnumerator TriggerVanillaUpgradeNextFrame(
-        GameObject effectCarrier,
-        int playerPhotonViewId,
-        string steamId,
-        string upgradeName,
-        string purchasedItemName)
+    private static void TriggerVanillaUpgrade(
+        GameObject carrier,
+        ItemUpgrade sourceUpgrade,
+        PlayerAvatar playerAvatar)
     {
-        // Leave enough time for remote vanilla clients to instantiate the room
-        // object and run ItemUpgrade.Start before its use RPC arrives. A single
-        // host frame is not sufficient when the remote client's RTT is higher.
-        yield return new WaitForSecondsRealtime(EffectCarrierInitializationSeconds);
+        ItemToggle itemToggle = carrier.GetComponent<ItemToggle>();
+        PhysGrabObject carrierPhysGrabObject = carrier.GetComponent<PhysGrabObject>();
+        if (itemToggle == null || carrierPhysGrabObject == null)
+        {
+            throw new MissingComponentException(
+                "The prepared vanilla effect carrier is missing required components.");
+        }
 
-        bool purchaseSnapshotTaken = false;
-        bool hadPurchasedEntry = false;
-        int purchasedItemCount = 0;
+        string purchasedItemName = sourceUpgrade.itemAttributes.item.name;
+        bool hadPurchasedEntry = StatsManager.instance.itemsPurchased.TryGetValue(
+            purchasedItemName,
+            out int purchasedItemCount);
 
         try
         {
-            if (effectCarrier == null)
-            {
-                throw new InvalidOperationException(
-                    "The vanilla effect carrier disappeared before it could be used.");
-            }
+            Vector3 effectPosition = sourceUpgrade.transform.position;
+            Quaternion effectRotation = sourceUpgrade.transform.rotation;
+            int playerPhotonViewId = playerAvatar.photonView.ViewID;
 
-            ItemToggle itemToggle = effectCarrier.GetComponent<ItemToggle>();
-            if (itemToggle == null)
-            {
-                throw new MissingComponentException(
-                    "The vanilla effect carrier has no ItemToggle component.");
-            }
-
-            // Snapshot immediately before the synchronous local RPC. This also
-            // preserves a real purchase made during the carrier's init delay.
-            hadPurchasedEntry = StatsManager.instance.itemsPurchased.TryGetValue(
-                purchasedItemName,
-                out purchasedItemCount);
-            purchaseSnapshotTaken = true;
-
-            // ItemUpgrade.Start disables ItemToggle while in the shop, so its own
-            // Start method never caches a PhotonView on this temporary object.
-            // Send the stock RPC through the actual PhotonView instead. Vanilla
-            // clients still execute ItemToggleRPC -> ToggleItemLogic themselves.
             if (SemiFunc.IsMultiplayer())
             {
-                PhotonView photonView = effectCarrier.GetComponent<PhotonView>();
+                PhotonView photonView = carrier.GetComponent<PhotonView>();
                 if (photonView == null || photonView.ViewID == 0)
                 {
                     throw new MissingComponentException(
-                        "The vanilla effect carrier has no networked PhotonView.");
+                        "The prepared effect carrier has no networked PhotonView.");
                 }
 
+                // Reliable RPCs sent by the same PhotonView arrive in order. Each
+                // client teleports first, then the stock consume path hides the
+                // mesh and detaches its particles at the original item's position.
+                photonView.RPC(
+                    SetPositionRpcName,
+                    RpcTarget.All,
+                    effectPosition,
+                    effectRotation);
                 photonView.RPC(
                     ToggleItemRpcName,
                     RpcTarget.All,
@@ -186,38 +293,16 @@ internal static class ShopUpgradeService
             }
             else
             {
+                carrierPhysGrabObject.SetPositionLogic(effectPosition, effectRotation);
                 itemToggle.ToggleItemLogic(true, playerPhotonViewId);
-            }
-
-        }
-        catch (Exception exception)
-        {
-            // No upgrade was delivered, so allow the player to try again.
-            ClaimedPlayers.Remove(steamId);
-            Plugin.ModLogger.LogError(
-                $"Failed to play/apply vanilla {upgradeName} use for {steamId}: {exception}");
-
-            if (effectCarrier != null)
-            {
-                if (SemiFunc.IsMultiplayer())
-                {
-                    PhotonNetwork.Destroy(effectCarrier);
-                }
-                else
-                {
-                    UnityEngine.Object.Destroy(effectCarrier);
-                }
             }
         }
         finally
         {
-            if (purchaseSnapshotTaken)
-            {
-                RestorePurchasedItemCount(
-                    purchasedItemName,
-                    hadPurchasedEntry,
-                    purchasedItemCount);
-            }
+            RestorePurchasedItemCount(
+                purchasedItemName,
+                hadPurchasedEntry,
+                purchasedItemCount);
         }
     }
 
@@ -236,5 +321,62 @@ internal static class ShopUpgradeService
         {
             StatsManager.instance.itemsPurchased.Remove(itemName);
         }
+    }
+
+    private static void ClearPreparedUpgrades()
+    {
+        if (PreparedByPlayer.Count == 0)
+        {
+            return;
+        }
+
+        foreach (PreparedUpgrade prepared in PreparedByPlayer.Values)
+        {
+            DestroyCarrier(prepared.Carrier);
+        }
+
+        PreparedByPlayer.Clear();
+    }
+
+    private static void DestroyCarrier(GameObject? carrier)
+    {
+        if (carrier == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (SemiFunc.IsMultiplayer())
+            {
+                PhotonNetwork.Destroy(carrier);
+            }
+            else
+            {
+                UnityEngine.Object.Destroy(carrier);
+            }
+        }
+        catch (Exception exception)
+        {
+            Plugin.ModLogger.LogWarning(
+                $"Could not clean up a prepared upgrade effect carrier: {exception}");
+        }
+    }
+
+    private sealed class PreparedUpgrade
+    {
+        internal PreparedUpgrade(
+            int sourceInstanceId,
+            string upgradeName,
+            GameObject carrier)
+        {
+            SourceInstanceId = sourceInstanceId;
+            UpgradeName = upgradeName;
+            Carrier = carrier;
+        }
+
+        internal int SourceInstanceId { get; }
+        internal string UpgradeName { get; }
+        internal GameObject Carrier { get; }
     }
 }

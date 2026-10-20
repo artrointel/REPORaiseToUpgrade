@@ -28,6 +28,11 @@ internal static class ItemUpgradePatch
     [HarmonyPostfix]
     private static void Postfix(ItemUpgrade __instance)
     {
+        if (__instance.GetComponent<UpgradeEffectCarrier>() != null)
+        {
+            return;
+        }
+
         if (__instance.GetComponent<UpgradeHoldTracker>() != null)
         {
             return;
