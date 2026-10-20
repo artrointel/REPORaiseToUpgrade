@@ -1,59 +1,62 @@
 # RepoHell
 
-R.E.P.O.용 BepInEx 5 / HarmonyX 모드 프로젝트입니다. 현재는 플러그인 로드와 Thunderstore 패키징까지 가능한 최소 골격만 포함합니다.
+R.E.P.O. 상점에서 업그레이드 아이템을 2초 동안 잡아 무료 개인 업그레이드 하나를 선택하는 호스트 전용 모드입니다.
 
-## 준비물
+## 동작 방식
+
+- 상점마다 각 플레이어는 한 번만 선택할 수 있습니다.
+- 원하는 업그레이드 아이템을 끊지 않고 2초 동안 잡으면 해당 능력치가 `+1` 됩니다.
+- 잡았던 아이템은 사라지거나 구매 처리되지 않습니다.
+- 판정과 보상 지급은 방장이 담당합니다.
+- 참가자는 모드를 설치하지 않은 순정 클라이언트여도 됩니다.
+
+지원 항목은 체력, 스태미나, 이동 속도, 추가 점프, 구르기 관련 능력, 잡기 거리·힘·던지기, 지도 플레이어 수, 데스 헤드 배터리입니다.
+
+세부 규칙과 검증 항목은 [planning/README.md](planning/README.md)를 참고하세요.
+
+## 개발 환경
 
 - R.E.P.O. (Steam)
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [Gale](https://github.com/Kesomannen/gale) 또는 r2modman/Thunderstore Mod Manager의 별도 개발 프로필
-- 개발 프로필에 설치한 `BepInEx-BepInExPack`
+- BepInEx 5가 설치된 R.E.P.O. 모드 프로필
 
-## 최초 설정
-
-1. 모드 매니저에서 R.E.P.O.용 `Mod Dev` 프로필을 만듭니다.
-2. 해당 프로필에 `BepInExPack`을 설치하고 한 번 `Start modded`로 실행합니다.
-3. r2modman은 `Directory.Repo.props.example`, Gale은 `Directory.Repo.Gale.props.example`을 `Directory.Repo.props`로 복사합니다.
-4. 복사한 파일의 `GameDirectory`, `ProfileName`, `BepInExDirectory`를 로컬 환경에 맞게 수정합니다.
-5. 아래 TODO를 실제 값으로 바꿉니다.
-   - `src/RepoHell/RepoHell.csproj`: `Authors`, `Description`
-   - `src/RepoHell/Plugin.cs`: `PluginGuid`
-   - `thunderstore/manifest.json`: `website_url`, `description`
-
-`Directory.Repo.props`에는 사용자 경로가 들어가므로 Git에서 제외됩니다.
-
-## 개발
+Visual Studio와 `.sln` 파일은 필요하지 않습니다. VS Code 터미널에서 다음 명령만 실행하면 됩니다.
 
 ```powershell
 dotnet restore
-dotnet build
+dotnet build src/RepoHell/RepoHell.csproj
 ```
 
-R.E.P.O. Modding SDK가 설정된 BepInEx 프로필을 찾으면 빌드된 DLL을 프로필의 `BepInEx\plugins` 아래로 자동 배포합니다. `dotnet run --project src/RepoHell/RepoHell.csproj`로 모드가 적용된 게임을 실행할 수도 있습니다.
+### VS Code 빠른 테스트
 
-정상 로드 여부는 BepInEx 콘솔 또는 `BepInEx\LogOutput.log`의 다음 메시지로 확인합니다.
+현재 로컬 `REPO` Thunderstore 프로필을 기준으로 개발 실행이 설정되어 있습니다.
 
-```text
-RepoHell v0.1.0 loaded.
-```
+- `Ctrl+Shift+B`: Debug 빌드 후 테스트 프로필에 DLL/PDB 배포
+- `Ctrl+Shift+P` → `Tasks: Run Task` → `RepoHell: Start game`: 빌드·배포 후 모드 적용 게임 실행
+- `F5` → `RepoHell: Launch and attach`: Mono 디버그 서버로 게임을 실행하고 중단점 연결
+- `RepoHell: Watch BepInEx log`: BepInEx 로그 실시간 확인
 
-## Thunderstore 패키지
+F5 중단점 디버깅에는 VS Code의 `C# Dev Kit`과 `Unity` 확장이 필요합니다. 확장 추천 알림에서 설치할 수 있습니다. 코드 변경 후에는 실행 중인 게임을 종료하고 다시 빌드·실행해야 합니다.
 
-1. 256x256 PNG 아이콘을 `thunderstore/icon.png`에 추가합니다.
-2. `RepoHell.csproj`, `Plugin.cs`, `manifest.json`의 버전을 동일하게 맞춥니다.
-3. 패키징 스크립트를 실행합니다.
+로컬 게임 경로를 지정하려면 `Directory.Repo.props.example` 또는 `Directory.Repo.Gale.props.example`을 `Directory.Repo.props`로 복사한 뒤 값을 수정하세요. 이 파일은 개인 경로를 포함하므로 Git에서 제외됩니다.
+
+정상 로드 시 BepInEx 로그에 `RepoHell v0.1.0 loaded.`가 표시됩니다.
+
+## Thunderstore 패키징
+
+먼저 `Authors`, `PluginGuid`, `website_url`을 실제 배포자 정보로 바꾸고, 256x256 PNG 아이콘을 `thunderstore/icon.png`에 추가합니다.
 
 ```powershell
 .\scripts\Pack-Thunderstore.ps1
 ```
 
-업로드용 ZIP은 `artifacts/RepoHell-<version>.zip`에 생성됩니다. ZIP 루트에는 `manifest.json`, `README.md`, `CHANGELOG.md`, `icon.png`, `BepInEx/`가 들어갑니다.
+결과 ZIP은 `artifacts/RepoHell-<version>.zip`에 생성됩니다.
 
 ## 구조
 
 ```text
-src/RepoHell/             C# 플러그인 소스
-thunderstore/             배포 메타데이터와 패키지 문서
-scripts/                  로컬 빌드/패키징 자동화
-Directory.Repo.props.*    개인별 게임 및 모드 프로필 경로
+src/RepoHell/     플러그인 소스
+planning/         현재 기능 명세와 테스트 계획
+thunderstore/     배포 메타데이터
+scripts/          패키징 자동화
 ```

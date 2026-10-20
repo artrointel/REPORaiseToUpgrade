@@ -8,8 +8,12 @@
     <RootNamespace>RepoHell</RootNamespace>
     <Authors>TODO_AUTHOR</Authors>
     <Version>0.1.0</Version>
-    <Description>A starter R.E.P.O. mod.</Description>
+    <Description>Hold one shop upgrade for two seconds to claim a free personal +1 each shop.</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <PropertyGroup>

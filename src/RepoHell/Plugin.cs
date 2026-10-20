@@ -24,6 +24,11 @@ public sealed class Plugin : BaseUnityPlugin
         ModLogger.LogInfo($"{PluginName} v{PluginVersion} loaded.");
     }
 
+    private void Update()
+    {
+        ShopUpgradeService.TickShopState();
+    }
+
     private void OnDestroy()
     {
         _harmony?.UnpatchSelf();

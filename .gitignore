@@ -1,6 +1,8 @@
 bin/
 obj/
 artifacts/
-.vscode/
+.dotnet/
+.dotnet-home/
+.nuget/
 *.user
 Directory.Repo.props
