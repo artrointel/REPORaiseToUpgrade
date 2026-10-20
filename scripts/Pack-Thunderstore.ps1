@@ -8,8 +8,15 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $projectFile = Join-Path $projectRoot "src\RaiseToUpgrade\RaiseToUpgrade.csproj"
 $metadataDirectory = Join-Path $projectRoot "thunderstore"
 $iconPath = Join-Path $metadataDirectory "icon.png"
+$localDotnet = Join-Path $projectRoot ".dotnet\dotnet.exe"
+$dotnetCommand = if (Test-Path -LiteralPath $localDotnet -PathType Leaf) {
+    $localDotnet
+}
+else {
+    (Get-Command dotnet -ErrorAction SilentlyContinue).Source
+}
 
-if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+if ([string]::IsNullOrWhiteSpace($dotnetCommand)) {
     throw ".NET 9 SDK가 필요합니다: https://dotnet.microsoft.com/download/dotnet/9.0"
 }
 
@@ -59,7 +66,7 @@ if ($pluginSource -like "*TODO_AUTHOR*") {
     throw "Plugin.cs의 PluginGuid를 실제 작성자 식별자로 바꾸세요."
 }
 
-& dotnet build $projectFile --configuration $Configuration
+& $dotnetCommand build $projectFile --configuration $Configuration
 if ($LASTEXITCODE -ne 0) {
     throw "빌드에 실패했습니다."
 }
