@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine;
 
-namespace RepoHell;
+namespace RaiseToUpgrade;
 
 internal static class ShopUpgradeService
 {

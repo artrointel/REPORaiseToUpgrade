@@ -1,8 +1,8 @@
 {
-  "name": "RepoHell",
+  "name": "RaiseToUpgrade",
   "version_number": "0.1.0",
-  "website_url": "https://github.com/TODO_OWNER/repohell",
-  "description": "Hold a shop upgrade for two seconds to claim one free personal +1 per shop.",
+  "website_url": "https://github.com/artrointel/REPORaiseToUpgrade",
+  "description": "Hold up a shop upgrade and look skyward for two seconds to claim a free personal +1 per shop.",
   "dependencies": [
     "BepInEx-BepInExPack-5.4.2305"
   ]

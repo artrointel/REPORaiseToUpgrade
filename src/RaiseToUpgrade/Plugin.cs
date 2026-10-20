@@ -2,13 +2,13 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 
-namespace RepoHell;
+namespace RaiseToUpgrade;
 
 [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
 public sealed class Plugin : BaseUnityPlugin
 {
-    public const string PluginGuid = "TODO_AUTHOR.RepoHell";
-    public const string PluginName = "RepoHell";
+    public const string PluginGuid = "artrointel.RaiseToUpgrade";
+    public const string PluginName = "RaiseToUpgrade";
     public const string PluginVersion = "0.1.0";
 
     internal static ManualLogSource ModLogger { get; private set; } = null!;

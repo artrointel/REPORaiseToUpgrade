@@ -4,11 +4,11 @@
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <AssemblyName>RepoHell</AssemblyName>
-    <RootNamespace>RepoHell</RootNamespace>
-    <Authors>TODO_AUTHOR</Authors>
+    <AssemblyName>RaiseToUpgrade</AssemblyName>
+    <RootNamespace>RaiseToUpgrade</RootNamespace>
+    <Authors>artrointel</Authors>
     <Version>0.1.0</Version>
-    <Description>Hold one shop upgrade for two seconds to claim a free personal +1 each shop.</Description>
+    <Description>Hold up a shop upgrade and look skyward for two seconds to claim a free personal +1 each shop.</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

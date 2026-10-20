@@ -2,12 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "RepoHell: Build + Deploy (Debug)",
+      "label": "RaiseToUpgrade: Build + Deploy (Debug)",
       "type": "process",
       "command": "${workspaceFolder}\\.dotnet\\dotnet.exe",
       "args": [
         "build",
-        "${workspaceFolder}\\src\\RepoHell\\RepoHell.csproj",
+        "${workspaceFolder}\\src\\RaiseToUpgrade\\RaiseToUpgrade.csproj",
         "--configuration",
         "Debug"
       ],
@@ -26,7 +26,7 @@
       }
     },
     {
-      "label": "RepoHell: Start game",
+      "label": "RaiseToUpgrade: Start game",
       "type": "process",
       "command": "powershell.exe",
       "args": [
@@ -36,11 +36,11 @@
         "-File",
         "${workspaceFolder}\\scripts\\Start-RepoDev.ps1"
       ],
-      "dependsOn": "RepoHell: Build + Deploy (Debug)",
+      "dependsOn": "RaiseToUpgrade: Build + Deploy (Debug)",
       "problemMatcher": []
     },
     {
-      "label": "RepoHell: Start game with debugger",
+      "label": "RaiseToUpgrade: Start game with debugger",
       "type": "process",
       "command": "powershell.exe",
       "args": [
@@ -51,11 +51,11 @@
         "${workspaceFolder}\\scripts\\Start-RepoDev.ps1",
         "-EnableDebugger"
       ],
-      "dependsOn": "RepoHell: Build + Deploy (Debug)",
+      "dependsOn": "RaiseToUpgrade: Build + Deploy (Debug)",
       "problemMatcher": []
     },
     {
-      "label": "RepoHell: Watch BepInEx log",
+      "label": "RaiseToUpgrade: Watch BepInEx log",
       "type": "shell",
       "command": "Get-Content -LiteralPath '${env:APPDATA}\\Thunderstore Mod Manager\\DataFolder\\REPO\\profiles\\REPO\\BepInEx\\LogOutput.log' -Tail 100 -Wait",
       "options": {

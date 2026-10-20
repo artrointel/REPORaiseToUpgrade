@@ -1,14 +1,14 @@
-# RepoHell
+# RaiseToUpgrade
 
 Choose one free personal upgrade in every shop.
 
 ## How it works
 
-- Grab any shop upgrade item continuously for two seconds.
+- Grab any shop upgrade item, look skyward, and hold both conditions continuously for two seconds.
 - That item's stat is increased by `+1` for you.
 - The item remains in the shop and is not purchased or consumed.
 - Each player can claim only one upgrade per shop.
-- Only the host needs RepoHell. Vanilla clients are supported.
+- Only the host needs RaiseToUpgrade. Vanilla clients are supported.
 
 ## Installation
 

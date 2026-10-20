@@ -1,4 +1,4 @@
-# RepoHell
+# RaiseToUpgrade
 
 R.E.P.O. 상점에서 업그레이드 아이템을 잡고 위를 2초 동안 바라봐 무료 개인 업그레이드 하나를 선택하는 호스트 전용 모드입니다.
 
@@ -26,7 +26,7 @@ Visual Studio와 `.sln` 파일은 필요하지 않습니다. VS Code 터미널�
 
 ```powershell
 dotnet restore
-dotnet build src/RepoHell/RepoHell.csproj
+dotnet build src/RaiseToUpgrade/RaiseToUpgrade.csproj
 ```
 
 ### VS Code 빠른 테스트
@@ -34,15 +34,15 @@ dotnet build src/RepoHell/RepoHell.csproj
 현재 로컬 `REPO` Thunderstore 프로필을 기준으로 개발 실행이 설정되어 있습니다.
 
 - `Ctrl+Shift+B`: Debug 빌드 후 테스트 프로필에 DLL/PDB 배포
-- `Ctrl+Shift+P` → `Tasks: Run Task` → `RepoHell: Start game`: 빌드·배포 후 모드 적용 게임 실행
-- `F5` → `RepoHell: Launch and attach`: Mono 디버그 서버로 게임을 실행하고 중단점 연결
-- `RepoHell: Watch BepInEx log`: BepInEx 로그 실시간 확인
+- `Ctrl+Shift+P` → `Tasks: Run Task` → `RaiseToUpgrade: Start game`: 빌드·배포 후 모드 적용 게임 실행
+- `F5` → `RaiseToUpgrade: Launch and attach`: Mono 디버그 서버로 게임을 실행하고 중단점 연결
+- `RaiseToUpgrade: Watch BepInEx log`: BepInEx 로그 실시간 확인
 
 F5 중단점 디버깅에는 VS Code의 `C# Dev Kit`과 `Unity` 확장이 필요합니다. 확장 추천 알림에서 설치할 수 있습니다. 코드 변경 후에는 실행 중인 게임을 종료하고 다시 빌드·실행해야 합니다.
 
 로컬 게임 경로를 지정하려면 `Directory.Repo.props.example` 또는 `Directory.Repo.Gale.props.example`을 `Directory.Repo.props`로 복사한 뒤 값을 수정하세요. 이 파일은 개인 경로를 포함하므로 Git에서 제외됩니다.
 
-정상 로드 시 BepInEx 로그에 `RepoHell v0.1.0 loaded.`가 표시됩니다.
+정상 로드 시 BepInEx 로그에 `RaiseToUpgrade v0.1.0 loaded.`가 표시됩니다.
 
 ## Thunderstore 패키징
 
@@ -52,12 +52,12 @@ F5 중단점 디버깅에는 VS Code의 `C# Dev Kit`과 `Unity` 확장이 필요
 .\scripts\Pack-Thunderstore.ps1
 ```
 
-결과 ZIP은 `artifacts/RepoHell-<version>.zip`에 생성됩니다.
+결과 ZIP은 `artifacts/RaiseToUpgrade-<version>.zip`에 생성됩니다.
 
 ## 구조
 
 ```text
-src/RepoHell/     플러그인 소스
+src/RaiseToUpgrade/     플러그인 소스
 planning/         현재 기능 명세와 테스트 계획
 thunderstore/     배포 메타데이터
 scripts/          패키징 자동화

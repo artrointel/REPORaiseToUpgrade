@@ -1,7 +1,7 @@
 using HarmonyLib;
 using UnityEngine;
 
-namespace RepoHell;
+namespace RaiseToUpgrade;
 
 /// <summary>
 /// Marks the temporary vanilla item used to broadcast stock upgrade feedback.

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace RepoHell;
+namespace RaiseToUpgrade;
 
 internal sealed class UpgradeHoldTracker : MonoBehaviour
 {

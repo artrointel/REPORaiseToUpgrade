@@ -2,9 +2,9 @@
 
 ## 0.1.0
 
-- Added one free personal stat upgrade choice per player in every shop.
-- Hold an upgrade item for two seconds to claim it without consuming the item.
-- Added host-only operation for vanilla-client compatibility.
-- Added the same networked vanilla upgrade material effect for hosts and unmodded clients.
-- Players now automatically release the held upgrade item after claiming it.
+- Renamed the mod to RaiseToUpgrade to match its focused shop-upgrade ritual.
+- Require players to hold an upgrade and look at least 60 degrees above the horizon for two seconds.
+- Play the vanilla upgrade feedback for hosts and unmodded clients.
+- Preserve the original shop item, purchased-item inventory, and future upgrade prices.
+- Automatically release the held item after a successful claim.
 

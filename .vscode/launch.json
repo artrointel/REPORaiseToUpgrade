@@ -2,11 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "RepoHell: Launch and attach",
+      "name": "RaiseToUpgrade: Launch and attach",
       "type": "vstuc",
       "request": "attach",
       "endPoint": "127.0.0.1:10000",
-      "preLaunchTask": "RepoHell: Start game with debugger"
+      "preLaunchTask": "RaiseToUpgrade: Start game with debugger"
     }
   ]
 }

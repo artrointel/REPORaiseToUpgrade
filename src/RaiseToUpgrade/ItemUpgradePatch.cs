@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
-namespace RepoHell;
+namespace RaiseToUpgrade;
 
 [HarmonyPatch(typeof(ItemUpgrade), "Start")]
 internal static class ItemUpgradePatch
