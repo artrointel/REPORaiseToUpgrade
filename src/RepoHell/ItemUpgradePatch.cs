@@ -46,7 +46,7 @@ internal static class ItemUpgradePatch
             {
                 UpgradeHoldTracker tracker =
                     __instance.gameObject.AddComponent<UpgradeHoldTracker>();
-                tracker.Initialize(physGrabObject, upgradeName);
+                tracker.Initialize(__instance, physGrabObject, upgradeName);
                 return;
             }
         }

@@ -5,4 +5,6 @@
 - Added one free personal stat upgrade choice per player in every shop.
 - Hold an upgrade item for two seconds to claim it without consuming the item.
 - Added host-only operation for vanilla-client compatibility.
+- Added the same networked vanilla upgrade material effect for hosts and unmodded clients.
+- Players now automatically release the held upgrade item after claiming it.
 
