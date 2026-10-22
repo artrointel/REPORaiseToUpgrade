@@ -1,42 +1,48 @@
-# 수동 테스트 계획
+# Manual Test Plan
 
-## 싱글플레이
+## Single-player checks
 
-1. 상점 진입 전 능력치를 기록한다.
-2. 업그레이드 아이템을 잡되 정면이나 아래를 바라보면 보상이 발생하지 않는지 확인한다.
-3. 위를 1초 바라봤다가 정면을 본 뒤 다시 위를 바라본다.
-4. grab과 위쪽 시선을 다시 2초 유지해야만 능력치가 정확히 `+1` 되는지 확인한다.
-5. 성공 전에 다른 업그레이드 아이템으로 바꾸면 이전 선택이 취소되고 새 아이템의 2초가 처음부터 시작되는지 확인한다.
-6. 성공 순간 순정 업그레이드 아이템을 사용할 때와 같은 사운드와 렌더링 이펙트가 표시되는지 확인한다.
-7. 준비 중인 임시 아이템이나 성공 직전 순간이동하는 메시가 화면에 보이지 않는지 확인한다.
-8. 성공 직후 직접 grab 버튼을 놓지 않아도 아이템이 손에서 떨어지는지 확인한다.
-9. 아이템이 사라지지 않고 구매 수량과 잔액도 변하지 않는지 확인한다.
-10. 무료 업그레이드 전후로 같은 종류 아이템의 표시 가격이 오르지 않는지 확인한다.
-11. 같은 상점의 다른 아이템을 2초 잡아도 추가 보상이 없는지 확인한다.
-12. 다음 스테이지 후 상점에서 다시 한 번 선택할 수 있는지 확인한다.
+1. Enter a shop and confirm that grabbing an upgrade for less than two seconds grants nothing.
+2. Keep grabbing an upgrade while looking forward or downward and confirm that no reward occurs.
+3. Look at least 60 degrees upward for two continuous seconds and confirm that the corresponding stat increases by exactly one.
+4. Look away before completion, look up again, and confirm that a fresh two-second hold is required.
+5. Switch to another upgrade before completion and confirm that the previous attempt is cancelled and the new timer starts from zero.
+6. Confirm that success plays the same sound and visual effect as normal use of that vanilla upgrade.
+7. Confirm that neither the prepared temporary item nor a teleporting mesh becomes visible.
+8. Confirm that the original item remains in the shop and is released automatically after success.
+9. Try another upgrade in the same shop and confirm that no second reward is granted.
+10. Compare the item's displayed price before and after the free claim and confirm that it does not increase.
+11. Enter the next shop and confirm that the player can claim once again.
+12. Buy and use the original item after the free claim and confirm that normal checkout and consumption still work.
 
-## 멀티플레이 호환성
+## Mixed-lobby checks
 
-테스트 인원은 최소 두 명이며, 방장만 RaiseToUpgrade를 설치한다.
+Use at least two players. Install RaiseToUpgrade only for the host; the joining player must use an unmodded profile.
 
-1. 순정 참가자가 아이템을 잡고 위를 2초 바라봐 자신의 능력치만 `+1` 되는지 확인한다.
-2. 다음 스테이지를 기다리지 않고 상점 안에서 즉시 증가한 능력치가 적용되는지 확인한다.
-3. 방장과 순정 참가자에게 동일한 순정 아이템 사용 사운드와 렌더링 이펙트가 표시되는지 확인한다.
-4. 방장과 참가자가 각각 다른 아이템을 선택할 수 있는지 확인한다.
-5. 두 명이 같은 아이템을 동시에 잡았을 때 성공한 플레이어만 자동으로 놓는지 확인한다.
-6. 두 명 모두 2초를 채우면 각자의 grab이 정상적으로 해제되는지 확인한다.
-7. 참가자가 2초 직전에 손을 놓거나 시선을 내리면 보상을 받지 않는지 확인한다.
-8. 이미 선택한 참가자의 재시도와 동시 grab으로 중복 보상이 생기지 않는지 확인한다.
-9. 참가자가 나갔다 다시 들어오는 상황에서 오류나 다른 플레이어 오지급이 없는지 확인한다.
+1. Have the unmodded player complete the gesture and confirm that only their stat increases by one.
+2. Confirm that the increase is visible and usable immediately while still inside the shop.
+3. Confirm that the host and unmodded player observe the same vanilla use sound and visual effect.
+4. Have both players grab the same upgrade and confirm that their timers and one-claim limits remain independent.
+5. If both succeed on the same shared item, confirm that each successful player is released without affecting the other's grab incorrectly.
+6. Have the host claim first and confirm that the unmodded player may still claim once, and vice versa.
+7. Confirm that nobody can claim twice during the same shop visit.
+8. Move to the next shop and confirm that both allowances reset.
+9. Disconnect and reconnect a player, then confirm that no exception occurs and no reward is assigned to the wrong player.
 
-## 회귀 확인
+## Regression checks
 
-- 아이템 구매와 순정 업그레이드 사용이 기존대로 동작한다.
-- 보상 연출 순간 원본과 겹친 임시 아이템이 눈에 띄거나 물리 충돌을 일으키지 않는지 확인한다.
-- grab을 반복하거나 아이템을 빠르게 바꿔도 화면 밖 임시 아이템이 남거나 오류가 누적되지 않는지 확인한다.
-- 무료 보상 전후로 구매 수량과 잔액이 변하지 않는지 확인한다.
-- 무료 보상만 받은 아이템의 다음 상점 가격이 상승하지 않는지 확인한다.
-- 원본 아이템을 실제 구매했다면 다음 가격은 순정 규칙대로 한 단계 상승하는지 확인한다.
-- 상점 밖에서 업그레이드 아이템을 잡아도 무료 보상이 발생하지 않는다.
-- 방장이 아닌 모드 사용자가 순정 방에 참가해도 기능을 임의 실행하지 않는다.
-- BepInEx 로그에 예외가 반복 기록되지 않는다.
+- Normal shop checkout and vanilla upgrade use still work.
+- The original shop item never disappears because of a free claim.
+- A genuinely purchased item still increases its future price according to vanilla rules.
+- No free reward is granted outside the shop.
+- A modded non-host joining an unmodded lobby cannot activate the feature.
+- Rapidly grabbing, releasing, or switching items does not leave hidden temporary objects or accumulate errors.
+- The temporary feedback item never becomes visible, collidable, or eligible for checkout.
+- Leaving the shop, unloading an item, or ending the run cleans up all prepared temporary items.
+
+## Evidence to capture before release
+
+- BepInEx logs from the host for one successful single-player and mixed-lobby claim.
+- A short host recording showing the gesture, vanilla feedback, automatic release, and unchanged source item.
+- A short unmodded-client recording showing the same feedback and immediate stat increase.
+- Before-and-after price checks for both a free claim and a normal purchase.

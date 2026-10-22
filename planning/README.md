@@ -1,58 +1,61 @@
-# RaiseToUpgrade 기능 명세
+# RaiseToUpgrade Specification
 
-## 한 문장 설명
+## Product statement
 
-상점에서 원하는 업그레이드 아이템을 잡고 위를 2초 동안 바라봐, 플레이어마다 상점당 한 번 무료 `+1`을 선택한다.
+In every shop, each player may hold up one upgrade item and look skyward for two seconds to claim a free personal `+1`.
 
-## 확정 규칙
+## Gameplay rules
 
-1. 기능은 상점에서만 활성화된다.
-2. 플레이어별 제한은 상점당 최초 1회다.
-3. 같은 업그레이드 아이템을 잡은 채 시선을 수평선보다 60도 이상 위로 유지해야 한다.
-4. grab과 위쪽 시선을 동시에 연속 2초 동안 유지해야 한다.
-5. 2초 전에 손을 놓거나 시선이 기준 아래로 내려가면 진행 시간이 즉시 초기화된다.
-6. 성공하면 잡은 아이템 종류에 대응하는 해당 플레이어의 능력치만 `+1` 된다.
-7. 성공 여부와 무관하게 아이템은 사라지거나 구매 처리되지 않는다.
-8. 무료 업그레이드는 해당 아이템의 구매 횟수와 이후 상점 가격을 증가시키지 않는다.
-9. 한 아이템을 여러 플레이어가 함께 잡아도 각자 독립적으로 시간을 계산한다.
-10. 이미 선택을 마친 플레이어가 다른 아이템을 잡아도 추가 보상은 없다.
-11. 보상 적용 시 방장과 순정 참가자 모두에게 순정 업그레이드 아이템 사용 사운드와 렌더링 이펙트를 동일하게 재생한다.
-12. 보상 적용 직후 해당 플레이어의 grab을 강제로 해제하고 0.25초 동안 재grab을 막는다.
+1. The feature is active only while the run is in the shop.
+2. Each player may claim one upgrade per shop visit.
+3. The player must keep grabbing the same supported upgrade item.
+4. The player must look at least 60 degrees above the horizon.
+5. Both conditions must remain true continuously for two seconds.
+6. Releasing or switching the item resets progress. Looking below the threshold resets the timer without discarding the prepared feedback item.
+7. Success grants `+1` only to the player performing the gesture.
+8. The original shop item is neither consumed nor purchased.
+9. A free claim must not increment purchase counts or change future prices.
+10. Multiple players grabbing the same item are tracked independently.
+11. A player who has already claimed in the current shop receives no additional reward.
+12. Success plays the stock upgrade sound and visual effect for the host and unmodded clients.
+13. Success releases that player's grab and prevents immediate re-grabbing for 0.25 seconds.
 
-## 멀티플레이 원칙
+## Host-only compatibility contract
 
-- 방장이 grab 상태, 2초 유지, 상점당 1회 제한을 판정한다.
-- 방장은 같은 종류의 임시 순정 아이템을 네트워크로 생성해 순정 사용 절차를 실행한다.
-- grab 시작 시 임시 아이템을 플레이 공간 밖에 준비하고, 기존 2초 제스처 동안 모든 클라이언트에서 초기화한다.
-- 성공 시 같은 네트워크 객체에서 위치 이동 RPC 다음 사용 RPC를 순서대로 전송한다.
-- 임시 아이템이 능력치 적용, 사용 사운드와 파티클을 담당하고 소모되며, 플레이어가 잡은 원본은 그대로 남는다.
-- 성공 전에 다른 아이템으로 바꾸거나 grab을 놓으면 이전 임시 아이템을 폐기한다.
-- 따라서 방장만 RaiseToUpgrade를 설치하면 되고 참가자는 별도 설치가 필요 없다.
-- 모드를 설치한 참가자가 순정 방에 들어간 경우에는 기능이 실행되지 않는다.
+- The host is the sole authority for gesture validation and rewards.
+- When a valid grab begins, the host creates a temporary networked copy of the same vanilla upgrade outside the playable area. The two-second gesture gives every client time to initialize it.
+- On success, the host sends the stock position and use RPCs in order through the same network object.
+- The temporary item runs the vanilla stat, sound, and particle path, then is consumed. The original shop item remains untouched.
+- Releasing or switching the source item before success destroys the unused temporary copy.
+- Only the host needs RaiseToUpgrade or BepInEx. Joining players may use an entirely unmodded game.
+- If a modded player joins an unmodded host, RaiseToUpgrade does not alter the game state.
+- Core behavior must not depend on custom client code, UI, assets, or network messages.
 
-## 구현 범위
+## Supported upgrades
 
-지원하는 순정 업그레이드 아이템:
+- Health
+- Stamina
+- Sprint speed
+- Extra jump
+- Tumble climb, launch, and wings
+- Grab range, strength, and throw
+- Map player count
+- Death Head battery
 
-- 체력, 스태미나, 이동 속도
-- 추가 점프
-- 잡기 거리, 잡기 힘, 던지기 힘
-- 구르기 발사, 오르기, 날개, 웅크리기 회복
-- 지도 플레이어 수
-- 데스 헤드 배터리
+## Scope
 
-이번 버전에서는 진행 UI, 설정 메뉴, 신규 아이템이나 커스텀 연출을 추가하지 않는다. 순정 참가자에게 추가 자산을 내려받게 하지 않기 위한 의도적인 범위 제한이다.
+The current release intentionally excludes progress UI, configuration menus, new items, and custom visual effects. This keeps the interaction small and preserves full compatibility for unmodded clients.
 
-## 완료 조건
+## Acceptance criteria
 
-- 싱글플레이와 방장 환경에서 grab과 위쪽 시선을 2초 연속 유지한 후 정확히 한 번 `+1` 된다.
-- 손을 놓거나 시선을 내렸다가 다시 조건을 맞추면 2초를 처음부터 세어야 한다.
-- 업그레이드 이후 아이템이 그대로 남는다.
-- 무료 업그레이드 전후로 해당 아이템의 다음 구매 가격이 변하지 않는다.
-- 같은 상점에서 두 번째 아이템으로 추가 업그레이드를 받을 수 없다.
-- 다음 상점에서는 다시 한 번 선택할 수 있다.
-- 순정 참가자가 자신의 능력치 증가를 실제 플레이에서 확인할 수 있다.
-- 방장과 순정 참가자에게 동일한 순정 아이템 사용 사운드와 렌더링 이펙트가 표시된다.
-- 업그레이드를 받은 플레이어만 잡고 있던 아이템을 자동으로 놓는다.
+- The gesture requires a continuous two-second grab while looking at least 60 degrees upward.
+- Exactly one supported stat increases by one for the initiating player.
+- The source item remains in the shop and can still be purchased normally.
+- The free claim does not change purchase inventory or the item's next price.
+- A second claim in the same shop is rejected.
+- Entering a later shop resets the per-player allowance.
+- An unmodded client receives the stat increase and observes the same stock sound and visual effect as the host.
+- Only the successful player is forced to release the item.
+- Abandoned temporary items are cleaned up without visible meshes, collisions, or accumulated network objects.
 
-자세한 수동 검증 순서는 [test-plan.md](test-plan.md)를 참고한다. 이전 대규모 기획은 `archive/`에 보관했다.
+Use [test-plan.md](test-plan.md) for manual release verification.

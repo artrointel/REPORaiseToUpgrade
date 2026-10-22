@@ -17,18 +17,18 @@ else {
 }
 
 if ([string]::IsNullOrWhiteSpace($dotnetCommand)) {
-    throw ".NET 9 SDK가 필요합니다: https://dotnet.microsoft.com/download/dotnet/9.0"
+    throw ".NET 9 SDK is required: https://dotnet.microsoft.com/download/dotnet/9.0"
 }
 
 if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
-    throw "Thunderstore용 256x256 PNG 아이콘을 thunderstore\icon.png에 추가하세요."
+    throw "Add a 256x256 PNG icon at thunderstore\icon.png."
 }
 
 Add-Type -AssemblyName System.Drawing
 $icon = [System.Drawing.Image]::FromFile($iconPath)
 try {
     if ($icon.Width -ne 256 -or $icon.Height -ne 256) {
-        throw "Thunderstore 아이콘은 정확히 256x256 픽셀이어야 합니다. 현재: $($icon.Width)x$($icon.Height)"
+        throw "The Thunderstore icon must be exactly 256x256 pixels. Current size: $($icon.Width)x$($icon.Height)"
     }
 }
 finally {
@@ -39,41 +39,38 @@ finally {
 $versionNode = $project.SelectSingleNode("/Project/PropertyGroup/Version")
 $version = if ($null -eq $versionNode) { "" } else { $versionNode.InnerText.Trim() }
 if ([string]::IsNullOrWhiteSpace($version)) {
-    throw "RaiseToUpgrade.csproj에서 Version을 찾을 수 없습니다."
+    throw "Version was not found in RaiseToUpgrade.csproj."
 }
 
 $authorNode = $project.SelectSingleNode("/Project/PropertyGroup/Authors")
 $author = if ($null -eq $authorNode) { "" } else { $authorNode.InnerText.Trim() }
-if ([string]::IsNullOrWhiteSpace($author) -or $author -like "TODO*") {
-    throw "RaiseToUpgrade.csproj의 Authors를 실제 Thunderstore 팀/작성자 이름으로 바꾸세요."
+if ([string]::IsNullOrWhiteSpace($author)) {
+    throw "Set Authors in RaiseToUpgrade.csproj to the actual Thunderstore team or author name."
 }
 
 $manifestPath = Join-Path $metadataDirectory "manifest.json"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($manifest.version_number -ne $version) {
-    throw "버전 불일치: csproj=$version, manifest=$($manifest.version_number)"
+    throw "Version mismatch: csproj=$version, manifest=$($manifest.version_number)"
 }
-if ($manifest.website_url -like "*TODO*") {
-    throw "manifest.json의 website_url을 실제 주소로 바꾸세요."
+if ([string]::IsNullOrWhiteSpace($manifest.website_url)) {
+    throw "website_url is required in manifest.json."
 }
 
 $pluginSource = Get-Content -LiteralPath (Join-Path $projectRoot "src\RaiseToUpgrade\Plugin.cs") -Raw -Encoding UTF8
 $pluginVersionMatch = [regex]::Match($pluginSource, 'PluginVersion\s*=\s*"(?<version>[^"]+)"')
-if (-not $pluginVersionMatch.Success -or $pluginVersionMatch.Groups["version"].Value -ne $version) {
-    throw "버전 불일치: csproj=$version, Plugin.cs=$($pluginVersionMatch.Groups['version'].Value)"
+$pluginVersion = $pluginVersionMatch.Groups["version"].Value
+if (-not $pluginVersionMatch.Success -or $pluginVersion -ne $version) {
+    throw "Version mismatch: csproj=$version, Plugin.cs=$pluginVersion"
 }
-if ($pluginSource -like "*TODO_AUTHOR*") {
-    throw "Plugin.cs의 PluginGuid를 실제 작성자 식별자로 바꾸세요."
-}
-
 & $dotnetCommand build $projectFile --configuration $Configuration
 if ($LASTEXITCODE -ne 0) {
-    throw "빌드에 실패했습니다."
+    throw "The build failed."
 }
 
 $dllPath = Join-Path $projectRoot "src\RaiseToUpgrade\bin\$Configuration\netstandard2.1\RaiseToUpgrade.dll"
 if (-not (Test-Path -LiteralPath $dllPath -PathType Leaf)) {
-    throw "빌드 결과 DLL을 찾을 수 없습니다: $dllPath"
+    throw "The build output DLL was not found: $dllPath"
 }
 
 $artifactsDirectory = Join-Path $projectRoot "artifacts"

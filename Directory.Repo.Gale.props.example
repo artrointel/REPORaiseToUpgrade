@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
-    <!-- Steam의 R.E.P.O. 설치 폴더. SDK가 자동 감지하면 생략할 수 있습니다. -->
+    <!-- Steam installation directory for R.E.P.O. Omit this if the SDK detects it automatically. -->
     <GameDirectory>C:\Program Files (x86)\Steam\steamapps\common\REPO</GameDirectory>
 
-    <!-- Gale 개발 프로필 설정 -->
+    <!-- Gale development profile. -->
     <ProfileName>Mod Dev</ProfileName>
     <BepInExDirectory>$(AppData)\com.kesomannen.gale\repo\profiles\$(ProfileName)\BepInEx</BepInExDirectory>
     <StartArguments>--doorstop-enable true --doorstop-target &quot;$(BepInExDirectory)\core\BepInEx.Preloader.dll&quot; --gale-profile &quot;$(ProfileName)&quot;</StartArguments>

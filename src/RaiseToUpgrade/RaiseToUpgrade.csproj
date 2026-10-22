@@ -9,19 +9,10 @@
     <Authors>artrointel</Authors>
     <Version>0.1.0</Version>
     <Description>Hold up a shop upgrade and look skyward for two seconds to claim a free personal +1 each shop.</Description>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <RestoreAdditionalProjectSources>
-      https://api.nuget.org/v3/index.json;
-      https://nuget.bepinex.dev/v3/index.json;
-      https://nuget.windows10ce.com/nuget/v3/index.json
-    </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <ItemGroup>
