@@ -1,6 +1,6 @@
 {
   "name": "RaiseToUpgrade",
-  "version_number": "0.1.0",
+  "version_number": "0.1.2",
   "website_url": "https://github.com/artrointel/REPORaiseToUpgrade",
   "description": "Hold up a shop upgrade and look skyward for two seconds to claim a free personal +1 per shop.",
   "dependencies": [

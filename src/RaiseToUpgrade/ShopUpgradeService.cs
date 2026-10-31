@@ -7,7 +7,6 @@ namespace RaiseToUpgrade;
 
 internal static class ShopUpgradeService
 {
-    private const string SetPositionRpcName = "SetPositionRPC";
     private const string ToggleItemRpcName = "ToggleItemRPC";
     private static readonly Vector3 CarrierStagingOffset =
         new(4096f, 4096f, 4096f);
@@ -225,6 +224,14 @@ internal static class ShopUpgradeService
         // progression. It adds no rendering and is not required on vanilla peers.
         carrier.AddComponent<UpgradeEffectCarrier>();
 
+        // Keep the client's first transform snapshot pending until use. In 0.5.0,
+        // SetPositionRPC no longer teleports remote peers.
+        PhotonView? carrierView = carrier.GetComponent<PhotonView>();
+        if (carrierView != null)
+        {
+            carrierView.Synchronization = ViewSynchronization.Off;
+        }
+
         // The host owns the room object, so disabling host-side physics keeps the
         // staged carrier from falling, colliding, or entering a shop trigger.
         Rigidbody? rigidbody = carrier.GetComponent<Rigidbody>();
@@ -277,14 +284,11 @@ internal static class ShopUpgradeService
                         "The prepared effect carrier has no networked PhotonView.");
                 }
 
-                // Reliable RPCs sent by the same PhotonView arrive in order. Each
-                // client teleports first, then the stock consume path hides the
-                // mesh and detaches its particles at the original item's position.
-                photonView.RPC(
-                    SetPositionRpcName,
-                    RpcTarget.All,
-                    effectPosition,
-                    effectRotation);
+                // Deliver the first native transform snapshot reliably before
+                // use. Vanilla clients apply their first snapshot immediately,
+                // before detaching the upgrade particles.
+                carrierPhysGrabObject.SetPositionLogic(effectPosition, effectRotation);
+                VanillaFeedbackSync.SendFirstSnapshot(photonView);
                 photonView.RPC(
                     ToggleItemRpcName,
                     RpcTarget.All,

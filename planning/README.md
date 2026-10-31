@@ -24,7 +24,7 @@ In every shop, each player may hold up one upgrade item and look skyward for two
 
 - The host is the sole authority for gesture validation and rewards.
 - When a valid grab begins, the host creates a temporary networked copy of the same vanilla upgrade outside the playable area. The two-second gesture gives every client time to initialize it.
-- On success, the host sends the stock position and use RPCs in order through the same network object.
+- While preparing a carrier, host-side PhotonView synchronization is Off so remote PhotonTransformView instances retain their first-snapshot state. On success, the host teleports the carrier locally, serializes all observed components through native PhotonView.SerializeView, and sends the native reliable serialization event (206) before the stock use RPC, both reliably on channel zero. The first snapshot applies the actual transform immediately on vanilla clients. Do not use SetPositionRPC to position remote feedback: it is host-only in 0.5.0.
 - The temporary item runs the vanilla stat, sound, and particle path, then is consumed. The original shop item remains untouched.
 - Releasing or switching the source item before success destroys the unused temporary copy.
 - Only the host needs RaiseToUpgrade or BepInEx. Joining players may use an entirely unmodded game.
@@ -59,3 +59,7 @@ The current release intentionally excludes progress UI, configuration menus, new
 - Abandoned temporary items are cleaned up without visible meshes, collisions, or accumulated network objects.
 
 Use [test-plan.md](test-plan.md) for manual release verification.
+
+## R.E.P.O. 0.5.0 interactions
+
+The native shopkeeper presentation/discount/destruction feature remains active for real shop items. Perform the gesture away from the shopkeeper when testing the mod independently. The mod does not undo native discounts or restore an item destroyed by the shopkeeper. Destroyed source items and dead/disabled players cancel progress. Temporary carriers are never held by players and are excluded from checkout, persistent item registration, and spawned-item tracking.

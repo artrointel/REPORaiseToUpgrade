@@ -7,21 +7,34 @@
     <AssemblyName>RaiseToUpgrade</AssemblyName>
     <RootNamespace>RaiseToUpgrade</RootNamespace>
     <Authors>artrointel</Authors>
-    <Version>0.1.0</Version>
+    <Version>0.1.2</Version>
     <Description>Hold up a shop upgrade and look skyward for two seconds to claim a free personal +1 each shop.</Description>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <InstalledGameManagedDirectory>$(GameDirectory)/REPO_Data/Managed</InstalledGameManagedDirectory>
+    <UseInstalledGameAssemblies Condition="'$(UseInstalledGameAssemblies)' == '' and Exists('$(InstalledGameManagedDirectory)/Assembly-CSharp.dll')">true</UseInstalledGameAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseInstalledGameAssemblies)' == 'true'">
+    <Reference Include="Assembly-CSharp" HintPath="$(InstalledGameManagedDirectory)/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="PhotonUnityNetworking" HintPath="$(InstalledGameManagedDirectory)/PhotonUnityNetworking.dll" Private="false" />
+    <Reference Include="PhotonRealtime" HintPath="$(InstalledGameManagedDirectory)/PhotonRealtime.dll" Private="false" />
+    <Reference Include="Photon3Unity3D" HintPath="$(InstalledGameManagedDirectory)/Photon3Unity3D.dll" Private="false" />
+    <Publicize Include="Assembly-CSharp" PublicizeTarget="All" PublicizeCompilerGenerated="false" IncludeOriginalAttributesAttribute="false" Strip="false" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
     <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" IncludeAssets="build" />
     <PackageReference Include="Linkoid.Repo.Plugin.Build" Version="0.2.2" PrivateAssets="all" />
-    <PackageReference Include="BepInEx.Core" Version="5.*" ExcludeAssets="runtime" />
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" ExcludeAssets="runtime" />
     <PackageReference Include="UnityEngine.Modules" Version="2022.3.62" IncludeAssets="compile" PrivateAssets="all" />
-    <PackageReference Include="R.E.P.O.GameLibs.Steam" Version="0.4.4-ngd.0" PrivateAssets="all" />
+    <PackageReference Include="R.E.P.O.GameLibs.Steam" Version="0.4.4-ngd.0" Condition="'$(UseInstalledGameAssemblies)' != 'true'" PrivateAssets="all" />
   </ItemGroup>
 </Project>
 

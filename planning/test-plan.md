@@ -46,3 +46,16 @@ Use at least two players. Install RaiseToUpgrade only for the host; the joining 
 - A short host recording showing the gesture, vanilla feedback, automatic release, and unchanged source item.
 - A short unmodded-client recording showing the same feedback and immediate stat increase.
 - Before-and-after price checks for both a free claim and a normal purchase.
+
+## R.E.P.O. 0.5.0 regression checks
+
+- Test host and vanilla-client gestures away from the shopkeeper first, including gamepad input and different game languages. Upgrade detection uses component identities, not localized display names.
+- In a mixed lobby, compare the actual particle and sound positions to the original shop item. No feedback may play at the hidden staging location. Repeat under network latency and packet loss.
+- Verify no second visible or collidable upgrade appears during the gesture or claim. The first native transform snapshot must precede the use RPC.
+- Present a real upgrade to the shopkeeper and confirm normal discount/rejection/destruction behavior remains available. A destroyed item must cancel any ongoing free-claim gesture without granting a reward afterward.
+- Reroll the upgrade stand while an item is being held; removed items must not leave pending carriers or grant rewards.
+- Check persistent item/save dictionaries before and after repeated aborted gestures; temporary carrier entries must not accumulate.
+- Die, become disabled, disconnect, or leave the shop during a gesture; no stale timer or hidden carrier may grant an unintended upgrade.
+- Verify the one-free-claim limit, next-shop reset, normal purchase price progression, and original-item consumption after a real purchase.
+
+Automated checks inspect both build configurations and the installed game/Photon DLLs. Passing them does not establish in-game audio/particle behavior or mixed-lobby compatibility without the manual checks above.

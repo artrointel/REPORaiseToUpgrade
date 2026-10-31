@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param(
-    [string]$Configuration = "Release"
+    [ValidateSet("Release")]
+    [string]$Configuration = "Release",
+    [switch]$NoRestore
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,7 +23,7 @@ if ([string]::IsNullOrWhiteSpace($dotnetCommand)) {
 }
 
 if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
-    throw "Add a 256x256 PNG icon at thunderstore\icon.png."
+    throw "Add a 256x256 PNG Thunderstore icon at thunderstore\icon.png."
 }
 
 Add-Type -AssemblyName System.Drawing
@@ -44,8 +46,8 @@ if ([string]::IsNullOrWhiteSpace($version)) {
 
 $authorNode = $project.SelectSingleNode("/Project/PropertyGroup/Authors")
 $author = if ($null -eq $authorNode) { "" } else { $authorNode.InnerText.Trim() }
-if ([string]::IsNullOrWhiteSpace($author)) {
-    throw "Set Authors in RaiseToUpgrade.csproj to the actual Thunderstore team or author name."
+if ([string]::IsNullOrWhiteSpace($author) -or $author -like "TODO*") {
+    throw "Set Authors in RaiseToUpgrade.csproj to your Thunderstore team/author name."
 }
 
 $manifestPath = Join-Path $metadataDirectory "manifest.json"
@@ -53,29 +55,48 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | Convert
 if ($manifest.version_number -ne $version) {
     throw "Version mismatch: csproj=$version, manifest=$($manifest.version_number)"
 }
-if ([string]::IsNullOrWhiteSpace($manifest.website_url)) {
-    throw "website_url is required in manifest.json."
+if ($manifest.website_url -like "*TODO*") {
+    throw "Set website_url in manifest.json to the actual project URL."
 }
 
 $pluginSource = Get-Content -LiteralPath (Join-Path $projectRoot "src\RaiseToUpgrade\Plugin.cs") -Raw -Encoding UTF8
 $pluginVersionMatch = [regex]::Match($pluginSource, 'PluginVersion\s*=\s*"(?<version>[^"]+)"')
-$pluginVersion = $pluginVersionMatch.Groups["version"].Value
-if (-not $pluginVersionMatch.Success -or $pluginVersion -ne $version) {
-    throw "Version mismatch: csproj=$version, Plugin.cs=$pluginVersion"
+if (-not $pluginVersionMatch.Success -or $pluginVersionMatch.Groups["version"].Value -ne $version) {
+    throw "Version mismatch: csproj=$version, Plugin.cs=$($pluginVersionMatch.Groups['version'].Value)"
 }
-& $dotnetCommand build $projectFile --configuration $Configuration
+if ($pluginSource -like "*TODO_AUTHOR*") {
+    throw "Set PluginGuid in Plugin.cs to your author identifier."
+}
+
+$env:DOTNET_CLI_HOME = Join-Path $projectRoot ".dotnet-home"
+$env:NUGET_PACKAGES = Join-Path $projectRoot ".nuget\packages"
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+$buildArguments = @("build", $projectFile, "--configuration", $Configuration, "-p:CopyFilesToPluginOutputDirectoryOnBuild=false")
+if ($NoRestore) {
+    $buildArguments += "--no-restore"
+}
+& $dotnetCommand @buildArguments
 if ($LASTEXITCODE -ne 0) {
-    throw "The build failed."
+    throw "Build failed."
 }
 
 $dllPath = Join-Path $projectRoot "src\RaiseToUpgrade\bin\$Configuration\netstandard2.1\RaiseToUpgrade.dll"
 if (-not (Test-Path -LiteralPath $dllPath -PathType Leaf)) {
-    throw "The build output DLL was not found: $dllPath"
+    throw "Build output DLL was not found: $dllPath"
 }
 
 $artifactsDirectory = Join-Path $projectRoot "artifacts"
 $stagingDirectory = Join-Path $artifactsDirectory "thunderstore-staging"
 $packagePath = Join-Path $artifactsDirectory "RaiseToUpgrade-$version.zip"
+
+# Check absolute targets before removing a previous staging directory or package.
+$artifactRoot = [IO.Path]::GetFullPath($artifactsDirectory).TrimEnd('\') + '\'
+foreach ($cleanupPath in @($stagingDirectory, $packagePath)) {
+    $resolvedPath = [IO.Path]::GetFullPath($cleanupPath)
+    if (-not $resolvedPath.StartsWith($artifactRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Cleanup target is outside the artifacts directory: $resolvedPath"
+    }
+}
 
 if (Test-Path -LiteralPath $stagingDirectory) {
     Remove-Item -LiteralPath $stagingDirectory -Recurse -Force
@@ -92,5 +113,19 @@ Copy-Item -LiteralPath (Join-Path $metadataDirectory "README.md") -Destination $
 Copy-Item -LiteralPath (Join-Path $metadataDirectory "CHANGELOG.md") -Destination $stagingDirectory
 Copy-Item -LiteralPath $iconPath -Destination $stagingDirectory
 
-Compress-Archive -Path (Join-Path $stagingDirectory "*") -DestinationPath $packagePath
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$archive = [IO.Compression.ZipFile]::Open($packagePath, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem -LiteralPath $stagingDirectory -File -Recurse) {
+        # ZIP entry paths use forward slashes on every platform.
+        $entryName = $file.FullName.Substring($stagingDirectory.Length + 1).Replace('\', '/')
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $archive, $file.FullName, $entryName, [IO.Compression.CompressionLevel]::Optimal
+        ) | Out-Null
+    }
+}
+finally {
+    $archive.Dispose()
+}
 Write-Host "Thunderstore package created: $packagePath"

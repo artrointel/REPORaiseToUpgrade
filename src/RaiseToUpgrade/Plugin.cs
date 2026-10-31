@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "artrointel.RaiseToUpgrade";
     public const string PluginName = "RaiseToUpgrade";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.1.2";
 
     internal static ManualLogSource ModLogger { get; private set; } = null!;
 

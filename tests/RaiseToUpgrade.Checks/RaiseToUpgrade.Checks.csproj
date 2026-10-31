@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GameManagedDirectory Condition="'$(GameManagedDirectory)' == ''">C:/Program Files (x86)/Steam/steamapps/common/REPO/REPO_Data/Managed</GameManagedDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/RaiseToUpgrade/NativeSnapshotPacket.cs" Link="NativeSnapshotPacket.cs" />
+    <Compile Include="../../src/RaiseToUpgrade/VanillaPhotonStream.cs" Link="VanillaPhotonStream.cs" />
+    <Reference Include="PhotonUnityNetworking" HintPath="$(GameManagedDirectory)/PhotonUnityNetworking.dll" />
+    <Reference Include="PhotonRealtime" HintPath="$(GameManagedDirectory)/PhotonRealtime.dll" />
+    <Reference Include="Photon3Unity3D" HintPath="$(GameManagedDirectory)/Photon3Unity3D.dll" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(GameManagedDirectory)/UnityEngine.CoreModule.dll" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+  </ItemGroup>
+</Project>

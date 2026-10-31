@@ -30,7 +30,7 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
 
     private void Update()
     {
-        if (_physGrabObject == null || !ShopUpgradeService.IsHostInShop)
+        if (_physGrabObject == null || _physGrabObject.dead || !ShopUpgradeService.IsHostInShop)
         {
             CancelTrackedPreparations();
             _holdSeconds.Clear();
@@ -42,7 +42,8 @@ internal sealed class UpgradeHoldTracker : MonoBehaviour
 
         foreach (PhysGrabber grabber in _physGrabObject.playerGrabbing)
         {
-            if (grabber == null || grabber.playerAvatar == null)
+            if (grabber == null || grabber.playerAvatar == null ||
+                grabber.playerAvatar.deadSet || grabber.playerAvatar.isDisabled)
             {
                 continue;
             }

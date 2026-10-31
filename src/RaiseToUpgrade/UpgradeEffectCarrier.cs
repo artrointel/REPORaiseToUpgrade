@@ -23,3 +23,24 @@ internal static class UpgradeEffectCarrierShopPatch
         return item == null || item.GetComponent<UpgradeEffectCarrier>() == null;
     }
 }
+
+[HarmonyPatch(typeof(StatsManager), nameof(StatsManager.ItemFetchName))]
+internal static class UpgradeEffectCarrierStatsPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(ItemAttributes itemAttributes)
+    {
+        // Temporary feedback must not allocate persistent item/save entries.
+        return itemAttributes == null || itemAttributes.GetComponent<UpgradeEffectCarrier>() == null;
+    }
+}
+
+[HarmonyPatch(typeof(ItemManager), nameof(ItemManager.AddSpawnedItem))]
+internal static class UpgradeEffectCarrierSpawnedItemPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(ItemAttributes item)
+    {
+        return item == null || item.GetComponent<UpgradeEffectCarrier>() == null;
+    }
+}

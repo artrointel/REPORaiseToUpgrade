@@ -1,13 +1,14 @@
 [CmdletBinding()]
 param(
-    [switch]$EnableDebugger
+    [switch]$EnableDebugger,
+    [string]$ProfileName = 'REPO'
 )
 
 $ErrorActionPreference = "Stop"
 
 $gameDirectory = "C:\Program Files (x86)\Steam\steamapps\common\REPO"
 $gameExecutable = Join-Path $gameDirectory "REPO.exe"
-$profileDirectory = Join-Path $env:APPDATA "Thunderstore Mod Manager\DataFolder\REPO\profiles\REPO"
+$profileDirectory = Join-Path $env:APPDATA "Thunderstore Mod Manager\DataFolder\REPO\profiles\$ProfileName"
 $preloader = Join-Path $profileDirectory "BepInEx\core\BepInEx.Preloader.dll"
 $doorstopProxy = Join-Path $gameDirectory "winhttp.dll"
 
@@ -36,6 +37,7 @@ if ($EnableDebugger) {
 
 Start-Process `
     -FilePath $gameExecutable `
+    -WindowStyle Normal `
     -WorkingDirectory $gameDirectory `
     -ArgumentList $launchArguments
 
@@ -43,5 +45,5 @@ if ($EnableDebugger) {
     Write-Host "R.E.P.O. started with the Mono debugger at 127.0.0.1:10000."
 }
 else {
-    Write-Host "R.E.P.O. started with the Thunderstore REPO profile."
+    Write-Host "R.E.P.O. started with the Thunderstore $ProfileName profile."
 }

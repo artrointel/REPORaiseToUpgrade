@@ -14,3 +14,9 @@ Choose one free personal upgrade in every shop.
 
 Install with a Thunderstore-compatible mod manager. BepInEx is installed automatically as a dependency.
 
+
+## R.E.P.O. 0.5.0 compatibility
+
+Version 0.1.1 updates the vanilla multiplayer feedback path for The Sunstone Update. The two-second gesture and one free personal upgrade per shop remain unchanged.
+
+The shopkeeper's new item presentation feature still applies to real shop items. Raise an upgrade away from the shopkeeper if you want to claim it without also presenting it for a native discount/destruction roll.
